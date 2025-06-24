@@ -1,0 +1,26 @@
+### 创建笔记
+POST http://localhost:8080/notes
+Content-Type: application/json
+
+{
+  "title": "测试笔记",
+  "content": "这是我写的第一条笔记"
+}
+
+### 获取所有笔记
+GET http://localhost:8080/notes
+
+### 获取单条笔记
+GET http://localhost:8080/notes/1
+
+### 更新笔记
+PUT http://localhost:8080/notes/1
+Content-Type: application/json
+
+{
+  "title": "更新后的标题",
+  "content": "这是更新后的内容"
+}
+
+### 删除笔记
+DELETE http://localhost:8080/notes/1
