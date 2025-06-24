@@ -1,0 +1,17 @@
+[package]
+name = "quicknote-backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-web = { version = "4.11.0", features = ["macros"] }
+dotenv = "0.15.0"
+jsonwebtoken = "9.3.1"
+serde = "1.0.219"
+serde_json = "1.0.140"
+sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "macros", "postgres"] }
+tokio = { version = "1.45.1", features = ["full"] }
+argon2 = "0.5"
+password-hash = "0.5"
+rand_core = "0.6"
+chrono = { version = "0.4", features = ["serde"] }
