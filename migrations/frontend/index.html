@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QuickNote - 简洁笔记应用</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-color: #2d3748;
+    --text-secondary: #4a5568;
+    --input-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --success-color: #10b981;
+    --error-color: #ef4444;
+    --warning-color: #f59e0b;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --transition: all 0.2s ease;
+  }
+
+  body.dark {
+    --primary-color: #5b70f5;
+    --primary-hover: #4a63f0;
+    --bg-color: #1a202c;
+    --card-bg: #2d3748;
+    --text-color: #f7fafc;
+    --text-secondary: #cbd5e0;
+    --input-bg: #4a5568;
+    --border-color: #4a5568;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    transition: var(--transition);
+    padding: 0;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #app-container {
+    width: 100%;
+    max-width: 480px;
+    padding: 2rem 1.5rem;
+  }
+
+  .card {
+    background-color: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .logo {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .logo h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .logo p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    color: var(--text-color);
+    position: relative;
+    padding-bottom: 0.5rem;
+  }
+
+  .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 3rem;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 3px;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  input, textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    font-size: 0.9375rem;
+    transition: var(--transition);
+  }
+
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+  }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-block {
+    display: block;
+    width: 100%;
+  }
+
+  .btn-icon {
+    margin-right: 0.5rem;
+  }
+
+  .auth-switch {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .auth-switch a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .note-card {
+    background-color: var(--input-bg);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+  }
+
+  .note-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .note-title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+  }
+
+  .note-content {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .note-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .note-actions .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  .btn-edit {
+    background-color: var(--warning-color);
+    color: white;
+  }
+
+  .btn-delete {
+    background-color: var(--error-color);
+    color: white;
+  }
+
+  .search-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-bar input {
+    flex: 1;
+  }
+
+  .theme-toggle {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: var(--transition);
+  }
+
+  .theme-toggle:hover {
+    color: var(--primary-color);
+    transform: rotate(30deg);
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 1.5rem 0;
+    position: relative;
+  }
+
+  .divider-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--card-bg);
+    padding: 0 1rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 480px) {
+    #app-container {
+      padding: 1.5rem 1rem;
+    }
+    
+    .card {
+      padding: 1.5rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app-container">
+  <div class="card">
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+    
+    <div class="logo">
+      <h1>QuickNote</h1>
+      <p>记录你的每一个想法</p>
+    </div>
+
+    <div id="auth-section">
+      <h3 class="section-title">欢迎回来</h3>
+      
+      <div class="form-group">
+        <label for="login-username">用户名</label>
+        <input id="login-username" placeholder="请输入用户名" autocomplete="username" />
+      </div>
+      
+      <div class="form-group">
+        <label for="login-password">密码</label>
+        <input id="login-password" type="password" placeholder="请输入密码" autocomplete="current-password" />
+      </div>
+      
+      <button class="btn btn-primary btn-block" onclick="login()">
+        <span class="btn-icon">👤</span> 登录
+      </button>
+      
+      <div class="divider">
+        <span class="divider-text">或</span>
+      </div>
+      
+      <h3 class="section-title">创建账号</h3>
+      
+      <div class="form-group">
+        <label for="register-username">用户名</label>
+        <input id="register-username" placeholder="设置用户名" autocomplete="username" />
+      </div>
+      
+      <div class="form-group">
+        <label for="register-password">密码</label>
+        <input id="register-password" type="password" placeholder="设置密码" autocomplete="new-password" />
+      </div>
+      
+      <button class="btn btn-primary btn-block" onclick="register()">
+        <span class="btn-icon">🆕</span> 注册
+      </button>
+    </div>
+
+    <div id="app-section" class="hidden">
+      <button class="btn btn-block" onclick="logout()" style="margin-bottom: 1.5rem;">
+        <span class="btn-icon">👋</span> 退出登录
+      </button>
+      
+      <h3 class="section-title">新建笔记</h3>
+      
+      <div class="form-group">
+        <label for="note-title">标题</label>
+        <input id="note-title" placeholder="笔记标题" />
+      </div>
+      
+      <div class="form-group">
+        <label for="note-content">内容</label>
+        <textarea id="note-content" placeholder="写下你的想法..."></textarea>
+      </div>
+      
+      <button class="btn btn-primary btn-block" onclick="createNote()">
+        <span class="btn-icon">📝</span> 保存笔记
+      </button>
+      
+      <h3 class="section-title" style="margin-top: 2rem;">我的笔记</h3>
+      
+      <div class="search-bar">
+        <input type="text" id="search-keyword" placeholder="搜索笔记..." />
+        <button class="btn btn-primary" onclick="searchNotes()">🔍</button>
+      </div>
+      
+      <div id="notes-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 保持原有JavaScript逻辑完全不变
+const API_BASE = 'http://localhost:8080';
+
+function saveToken(token) {
+  localStorage.setItem('token', token);
+}
+
+function getToken() {
+  return localStorage.getItem('token');
+}
+
+function clearToken() {
+  localStorage.removeItem('token');
+}
+
+function setAuthVisible(visible) {
+  document.getElementById('auth-section').style.display = visible ? 'block' : 'none';
+  document.getElementById('app-section').style.display = visible ? 'none' : 'block';
+}
+
+async function register() {
+  const username = document.getElementById('register-username').value.trim();
+  const password = document.getElementById('register-password').value.trim();
+  if (!username || !password) {
+    alert('请输入用户名和密码');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/register`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password}),
+    });
+    if (res.ok) {
+      alert('注册成功，请登录');
+      document.getElementById('register-username').value = '';
+      document.getElementById('register-password').value = '';
+    } else {
+      const text = await res.text();
+      alert('注册失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+async function login() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  if (!username || !password) {
+    alert('请输入用户名和密码');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password}),
+    });
+    if (res.ok) {
+      const token = await res.text();
+      saveToken(token);
+      setAuthVisible(false);
+      loadNotes();
+    } else {
+      const text = await res.text();
+      alert('登录失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+function logout() {
+  clearToken();
+  setAuthVisible(true);
+  document.getElementById('notes-list').innerHTML = '';
+}
+
+async function loadNotes(keyword = '') {
+  const token = getToken();
+  if (!token) return;
+  try {
+    let url = `${API_BASE}/api/notes`;
+    if (keyword) {
+      url += `?keyword=${encodeURIComponent(keyword)}`;
+    }
+    const res = await fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      const notes = await res.json();
+      displayNotes(notes);
+    } else {
+      alert('加载笔记失败');
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+function displayNotes(notes) {
+  const container = document.getElementById('notes-list');
+  container.innerHTML = '';
+  
+  if (notes.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">暂无笔记</p>';
+    return;
+  }
+  
+  notes.forEach(note => {
+    const noteElement = document.createElement('div');
+    noteElement.className = 'note-card';
+    // noteElement.innerHTML = `
+    //   <h4 class="note-title">${escapeHtml(note.title)}</h4>
+    //   <pre class="note-content">${escapeHtml(note.content)}</pre>
+    //   <div class="note-actions">
+    //     <button class="btn btn-edit" onclick="editNote(${note.id}, '${escapeHtml(note.title)}', '${escapeHtml(note.content)}')">编辑</button>
+    //     <button class="btn btn-delete" onclick="deleteNote(${note.id})">删除</button>
+    //   </div>
+    // `;
+    noteElement.innerHTML = `
+        <h4 class="note-title">${escapeHtml(note.title)}</h4>
+        <pre class="note-content">${escapeHtml(note.content)}</pre>
+        <div class="note-actions">
+            <button class="btn btn-edit" onclick="editNote(${note.id}, '${escapeHtml(note.title)}', '${escapeHtml(note.content)}')">编辑</button>
+            <button class="btn btn-export" onclick="exportNoteAsTxt(${note.id}, '${escapeHtml(note.title)}', '${escapeHtml(note.content)}')">导出TXT</button>
+            <button class="btn btn-delete" onclick="deleteNote(${note.id})">删除</button>
+        </div>
+    `;
+    container.appendChild(noteElement);
+  });
+}
+
+function exportNoteAsTxt(noteId, noteTitle, noteContent) {
+    const blob = new Blob([`标题: ${noteTitle}\n\n${noteContent}`], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${noteTitle.replace(/[^\w]/g, '_')}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+async function createNote() {
+  const title = document.getElementById('note-title').value.trim();
+  const content = document.getElementById('note-content').value.trim();
+  if (!title || !content) {
+    alert('请填写标题和内容');
+    return;
+  }
+  const token = getToken();
+  if (!token) {
+    alert('请先登录');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({title, content})
+    });
+    if (res.ok) {
+      document.getElementById('note-title').value = '';
+      document.getElementById('note-content').value = '';
+      loadNotes();
+    } else {
+      const text = await res.text();
+      alert('创建失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+function editNote(id, oldTitle, oldContent) {
+  const newTitle = prompt("修改标题:", oldTitle);
+  if (newTitle === null) return;
+
+  const newContent = prompt("修改内容:", oldContent);
+  if (newContent === null) return;
+
+  updateNote(id, newTitle, newContent);
+}
+
+async function updateNote(id, title, content) {
+  const token = getToken();
+  if (!token) {
+    alert('请先登录');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/notes/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({title, content})
+    });
+    if (res.ok) {
+      loadNotes();
+    } else {
+      const text = await res.text();
+      alert('更新失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+async function deleteNote(id) {
+  const token = getToken();
+  if (!token) {
+    alert('请先登录');
+    return;
+  }
+  if (!confirm('确定要删除这条笔记吗？')) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/notes/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      loadNotes();
+    } else {
+      alert('删除失败');
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+}
+
+function searchNotes() {
+  const keyword = document.getElementById('search-keyword').value;
+  loadNotes(keyword);
+}
+
+window.onload = () => {
+  if (getToken()) {
+    setAuthVisible(false);
+    loadNotes();
+  } else {
+    setAuthVisible(true);
+  }
+};
+</script>
+
+</body>
+</html>

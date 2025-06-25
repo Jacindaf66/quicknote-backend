@@ -5,3 +5,4 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT now()
 );
 -- Add migration script here
+

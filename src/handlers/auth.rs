@@ -7,6 +7,9 @@ use rand_core::OsRng;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use chrono::{Utc, Duration};
 use std::env;
+use crate::middleware::claims::Claims;
+
+
 
 #[derive(Deserialize)]
 pub struct RegisterRequest {
@@ -61,11 +64,6 @@ pub async fn register(
     }
 }
 
-#[derive(serde::Serialize)]
-struct Claims {
-    sub: String,
-    exp: usize,
-}
 
 #[post("/login")]
 pub async fn login(
@@ -73,9 +71,10 @@ pub async fn login(
     form: web::Json<LoginRequest>,
 ) -> impl Responder {
     let row = sqlx::query!(
-        "SELECT password_hash FROM users WHERE username = $1",
-        form.username
+      "SELECT id, password_hash FROM users WHERE username = $1",
+       form.username
     )
+
     .fetch_optional(pool.get_ref())
     .await;
 
@@ -99,11 +98,24 @@ pub async fn login(
     }
 
     // 生成 JWT
-    let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "my_secret".into());
+    // let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "my_secret".into());
+    // let claims = Claims {
+    //     sub: form.username.clone(),
+    //     exp: (Utc::now() + Duration::hours(24)).timestamp() as usize,
+    // };
+     // ✅ 生成 JWT，使用 user_id 而非用户名
+     let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "my_secret".into());
+    // let claims = Claims {
+    //     user_id: row.id,  // <<-- 使用数据库返回的 id
+    //     exp: (Utc::now() + Duration::hours(24)).timestamp() as usize,
+    // };
     let claims = Claims {
-        sub: form.username.clone(),
-        exp: (Utc::now() + Duration::hours(24)).timestamp() as usize,
-    };
+    user_id: row.id,             // 使用查询结果中的 id
+    sub: form.username.clone(),   // 这里一般放用户名或者用户id的字符串
+    exp: (Utc::now() + Duration::hours(24)).timestamp() as usize,
+    
+};
+
 
     let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_bytes()))
         .unwrap_or_else(|_| "token_error".into());

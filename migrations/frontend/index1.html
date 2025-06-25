@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QuickNote 前端</title>
+<style>
+  :root {
+    --bg-color: #f0f4ff;
+    --card-bg: #ffffff;
+    --text-color: #333;
+    --input-bg: #fff;
+    --border-color: #ccc;
+    --button-bg: #007bff;
+    --button-hover: #0056b3;
+  }
+
+  body.dark {
+    --bg-color: #1e1e2f;
+    --card-bg: #2c2c3e;
+    --text-color: #eee;
+    --input-bg: #3a3a4f;
+    --border-color: #555;
+    --button-bg: #4e88ff;
+    --button-hover: #3661c9;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-color);
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    color: var(--text-color);
+    transition: background 0.3s, color 0.3s;
+    min-height: 100vh;
+  }
+
+  #container {
+    max-width: 400px;
+    width: 100%;
+    padding: 25px 30px 40px 30px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    position: relative;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  h3 {
+    margin-top: 30px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  input, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    margin: 8px 0 15px 0;
+    border: 1.5px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 15px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    transition: border-color 0.3s;
+    resize: vertical;
+    font-family: inherit;
+  }
+
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--button-bg);
+  }
+
+  button {
+    width: 100%;
+    background-color: var(--button-bg);
+    color: white;
+    border: none;
+    padding: 12px 0;
+    margin: 12px 0 0 0;
+    border-radius: 8px;
+    font-size: 17px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: 600;
+  }
+
+  button:hover {
+    background-color: var(--button-hover);
+  }
+
+  #theme-toggle {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: 1.5px solid var(--border-color);
+    padding: 6px 12px;
+    font-size: 14px;
+    color: var(--text-color);
+    border-radius: 8px;
+    width: auto;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  #theme-toggle:hover {
+    background-color: var(--button-bg);
+    color: white;
+    border-color: var(--button-bg);
+  }
+
+  .note-item {
+    border: 1px solid var(--border-color);
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-top: 15px;
+    background: var(--input-bg);
+    word-break: break-word;
+  }
+
+  .note-item pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 8px 0;
+  }
+
+  .note-item button {
+    margin-right: 10px;
+    width: auto;
+    padding: 6px 14px;
+    font-size: 14px;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  #notes-list {
+    margin-top: 18px;
+  }
+</style>
+</head>
+<body>
+
+<div id="container">
+  <button id="theme-toggle" onclick="toggleTheme()">切换主题🌙 /☀️ </button>
+  <h2>QuickNote</h2>
+
+  <div id="auth-section">
+    <h3>注册</h3>
+    <input id="register-username" placeholder="用户名" autocomplete="off" />
+    <input id="register-password" type="password" placeholder="密码" autocomplete="off" />
+    <button onclick="register()">注册🆕 </button>
+
+    <h3>登录</h3>
+    <input id="login-username" placeholder="用户名" autocomplete="off" />
+    <input id="login-password" type="password" placeholder="密码" autocomplete="off" />
+    <button onclick="login()">登录👤</button>
+  </div>
+
+  <div id="app-section" class="hidden">
+    <button onclick="logout()">退出登录😊👋 </button>
+
+    <h3>新建笔记</h3>
+    <input id="note-title" placeholder="标题" />
+    <textarea id="note-content" placeholder="内容" rows="4"></textarea>
+    <button onclick="createNote()">添加笔记📝</button>
+
+    <h3>笔记列表</h3>
+    <input type="text" id="search-keyword" placeholder="输入标题关键词搜索笔记" />
+    <button onclick="searchNotes()">🔍 搜索</button> 
+    <div id="notes-list"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8080';
+
+// 保存 JWT Token
+function saveToken(token) {
+  localStorage.setItem('token', token);
+}
+
+function getToken() {
+  return localStorage.getItem('token');
+}
+
+function clearToken() {
+  localStorage.removeItem('token');
+}
+
+function setAuthVisible(visible) {
+  document.getElementById('auth-section').style.display = visible ? 'block' : 'none';
+  document.getElementById('app-section').style.display = visible ? 'none' : 'block';
+}
+
+// 注册
+async function register() {
+  const username = document.getElementById('register-username').value.trim();
+  const password = document.getElementById('register-password').value.trim();
+  if (!username || !password) {
+    alert('请输入用户名和密码');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/register`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password}),
+    });
+    if (res.ok) {
+      alert('注册成功，请登录');
+    } else {
+      const text = await res.text();
+      alert('注册失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+// 登录
+async function login() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  if (!username || !password) {
+    alert('请输入用户名和密码');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password}),
+    });
+    if (res.ok) {
+      const token = await res.text();
+      saveToken(token);
+      alert('登录成功');
+      setAuthVisible(false);
+      loadNotes();
+    } else {
+      const text = await res.text();
+      alert('登录失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+// 登出
+function logout() {
+  clearToken();
+  setAuthVisible(true);
+  document.getElementById('notes-list').innerHTML = '';
+}
+
+async function loadNotes(keyword = '') {
+  const token = getToken();
+  if (!token) return;
+  try {
+    let url = `${API_BASE}/api/notes`;
+    if (keyword) {
+      url += `?keyword=${encodeURIComponent(keyword)}`;
+    }
+    const res = await fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      const notes = await res.json();
+      displayNotes(notes);
+    } else {
+      alert('加载笔记失败');
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+
+// 显示笔记
+function displayNotes(notes) {
+  const container = document.getElementById('notes-list');
+  container.innerHTML = '';
+  notes.forEach(note => {
+    const div = document.createElement('div');
+    div.className = 'note-item';
+    div.innerHTML = `
+      <strong>${escapeHtml(note.title)}</strong><br/>
+      <pre>${escapeHtml(note.content)}</pre>
+      <button onclick="editNote(${note.id}, '${escapeHtml(note.title)}', '${escapeHtml(note.content)}')">编辑✍️</button>
+      <button onclick="deleteNote(${note.id})">删除🗑️</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+// 创建笔记
+async function createNote() {
+  const title = document.getElementById('note-title').value.trim();
+  const content = document.getElementById('note-content').value.trim();
+  if (!title || !content) {
+    alert('请填写标题和内容');
+    return;
+  }
+  const token = getToken();
+  if (!token) {
+    alert('请先登录');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({title, content})
+    });
+    if (res.ok) {
+      alert('笔记创建成功');
+      document.getElementById('note-title').value = '';
+      document.getElementById('note-content').value = '';
+      loadNotes();
+    } else {
+      const text = await res.text();
+      alert('创建失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+// 编辑笔记
+function editNote(id, oldTitle, oldContent) {
+  const newTitle = prompt("修改标题:", oldTitle);
+  if (newTitle === null) return; // 用户取消
+
+  const newContent = prompt("修改内容:", oldContent);
+  if (newContent === null) return;
+
+  updateNote(id, newTitle, newContent);
+}
+
+// 更新笔记
+async function updateNote(id, title, content) {
+  const token = getToken();
+  if (!token) {
+    alert('请先登录');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/notes/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({title, content})
+    });
+    if (res.ok) {
+      alert('笔记更新成功');
+      loadNotes();
+    } else {
+      const text = await res.text();
+      alert('更新失败: ' + text);
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+// 删除笔记
+async function deleteNote(id) {
+  const token = getToken();
+  if (!token) {
+    alert('请先登录');
+    return;
+  }
+  if (!confirm('确定要删除这条笔记吗？')) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/notes/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      alert('删除成功');
+      loadNotes();
+    } else {
+      alert('删除失败');
+    }
+  } catch(e) {
+    alert('请求失败: ' + e.message);
+  }
+}
+
+// 防止XSS
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// 页面加载时检查是否登录
+window.onload = () => {
+  if (getToken()) {
+    setAuthVisible(false);
+    loadNotes();
+  } else {
+    setAuthVisible(true);
+  }
+};
+
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+}
+
+function searchNotes() {
+  const keyword = document.getElementById('search-keyword').value;
+  loadNotes(keyword);
+}
+
+</script>
+
+</body>
+</html>

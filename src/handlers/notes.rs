@@ -7,16 +7,18 @@ use actix_web::HttpMessage;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use sqlx::types::time::OffsetDateTime;
+use crate::models::notes::{Note, NoteRequest, ListNotesQuery};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Note {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    pub content: String,
-    pub created_at: Option<OffsetDateTime>,
-    pub updated_at: Option<OffsetDateTime>,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct Note {
+//     pub id: i32,
+//     pub user_id: i32,
+//     pub title: String,
+//     pub content: String,
+//     pub created_at: Option<OffsetDateTime>,
+//     pub updated_at: Option<OffsetDateTime>,
+  
+// }
 
 #[derive(Deserialize)]
 pub struct NewNote {
@@ -60,24 +62,46 @@ pub async fn create_note(
 pub async fn list_notes(
     req: HttpRequest,
     pool: web::Data<PgPool>,
+    query: web::Query<ListNotesQuery>,
 ) -> Result<impl Responder, Error> {
     let user_id = req.extensions().get::<i32>().copied().unwrap_or(1);
 
-    let notes = sqlx::query_as!(
-        Note,
-        r#"
-        SELECT id, user_id, title, content, created_at, updated_at
-        FROM notes
-        WHERE user_id = $1
-        "#,
-        user_id
-    )
-    .fetch_all(pool.get_ref())
-    .await
-    .map_err(ErrorInternalServerError)?;
+    if let Some(keyword) = &query.keyword {
+        let like_pattern = format!("%{}%", keyword);
 
-    Ok(web::Json(notes))
+        let notes = sqlx::query_as!(
+            Note,
+            r#"
+            SELECT id, user_id, title, content, created_at, updated_at
+            FROM notes
+            WHERE user_id = $1 AND (title ILIKE $2 OR content ILIKE $2)
+            "#,
+            user_id,
+            like_pattern
+        )
+        .fetch_all(pool.get_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+        Ok(web::Json(notes))
+    } else {
+        let notes = sqlx::query_as!(
+            Note,
+            r#"
+            SELECT id, user_id, title, content, created_at, updated_at
+            FROM notes
+            WHERE user_id = $1
+            "#,
+            user_id
+        )
+        .fetch_all(pool.get_ref())
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+        Ok(web::Json(notes))
+    }
 }
+
 
 #[get("/notes/{id}")]
 pub async fn get_note(
